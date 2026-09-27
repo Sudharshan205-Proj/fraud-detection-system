@@ -1,0 +1,36 @@
+[theme]
+base = "dark"
+
+# Primary accent — used for buttons, sliders, links, etc.
+primaryColor = "#4F8BF9"
+
+# Main application background
+backgroundColor = "#0E1117"
+
+# Secondary/card background
+secondaryBackgroundColor = "#161B22"
+
+# Main text
+textColor = "#F0F6FC"
+
+# Font
+font = "sans serif"
+
+[server]
+# Required for Streamlit Cloud
+headless = true
+
+# Reduce unnecessary file watching
+fileWatcherType = "auto"
+
+[browser]
+# Prevent Streamlit from collecting usage statistics
+gatherUsageStats = false
+
+[client]
+# Hide the default Streamlit menu
+toolbarMode = "minimal"
+
+[ui]
+# Hide the deploy button
+hideTopBar = false

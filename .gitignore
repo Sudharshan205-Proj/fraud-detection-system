@@ -1,28 +1,9 @@
 # --- Virtual environment ---
 .venv/
-venv/
-env/
 
-# --- Secrets — never commit API tokens ---
+# --- Secrets ---
 .kaggle/
-kaggle.json
 
-# --- Data & model artifacts — large / regenerated locally, not tracked ---
+# --- Data ---
 data/
-models/
 paysim1.zip
-
-# --- Jupyter / Python caches ---
-.ipynb_checkpoints/
-__pycache__/
-*.pyc
-*.pyo
-
-# --- Streamlit ---
-.streamlit/
-
-# --- OS / editor cruft ---
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
