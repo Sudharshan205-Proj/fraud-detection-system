@@ -222,11 +222,11 @@ flowchart TD
     class D1,D2,D3,D4 share
     class E1,E2,E3 act
 
-    style W1  fill:#eef2fa,stroke:#4C72B0,stroke-width:2px
-    style W2  fill:#fceeee,stroke:#C44E52,stroke-width:2px
-    style W34 fill:#f2eef8,stroke:#8172B2,stroke-width:2px
-    style W5  fill:#fbf8ea,stroke:#CCB974,stroke-width:2px
-    style W6  fill:#eaf5f9,stroke:#64B5CD,stroke-width:2px
+    style W1  fill:#eef2fa,stroke:#4C72B0,stroke-width:2px, color:#000000
+    style W2  fill:#fceeee,stroke:#C44E52,stroke-width:2px, color:#000000
+    style W34 fill:#f2eef8,stroke:#8172B2,stroke-width:2px, color:#000000
+    style W5  fill:#fbf8ea,stroke:#CCB974,stroke-width:2px, color:#000000
+    style W6  fill:#eaf5f9,stroke:#64B5CD,stroke-width:2px, color:#000000
 ```
 
 ---
