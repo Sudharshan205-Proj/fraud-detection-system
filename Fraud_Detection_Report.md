@@ -2,7 +2,6 @@
 
 **Data Science Internship Project — Codec Technologies**
 
-| | |
 |---|---|
 | **Dataset** | [PaySim1 — Synthetic Financial Datasets For Fraud Detection](https://www.kaggle.com/datasets/ealaxi/paysim1) (Kaggle) |
 | **Notebook** | `fraud-detection-system.ipynb` |
@@ -69,7 +68,6 @@ Beyond the headline number, the project is built to be a complete, reproducible,
 
 Financial fraud costs institutions and their customers directly: every missed fraudulent transaction is a financial loss, and every false alarm erodes customer trust and adds support cost. The goal of this project was to build a system that flags likely-fraudulent transactions accurately enough to be useful to a fraud-operations team, while keeping false alarms low.
 
-| | |
 |---|---|
 | **Business task** | Detect fraudulent transactions in near-real time, providing both a risk score per transaction and an explanation of what drove that score. |
 | **Stakeholder** | A fraud-operations team that needs a ranked risk score per transaction *and* a clear explanation of what drives it. |

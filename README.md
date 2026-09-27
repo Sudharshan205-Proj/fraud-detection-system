@@ -47,7 +47,6 @@ A fraud-detection pipeline built on [PaySim1](https://www.kaggle.com/datasets/ea
 
 That is the original brief for this internship project. Everything else in this repository — the 8-experiment comparison matrix, the leakage-safe feature engineering, the fair threshold-optimized model selection, and the interactive demo — is this brief carried out end-to-end on a real 6.3-million-row dataset, following the same six-phase analysis cycle taught throughout the internship's foundational coursework (see below).
 
-| | |
 |---|---|
 | **Task** | Binary classification — flag fraudulent transactions in near-real time |
 | **Dataset** | PaySim1, 6,362,620 transactions, 8,213 fraud (0.13%) |
