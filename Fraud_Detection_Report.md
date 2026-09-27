@@ -34,7 +34,6 @@
 20. [Visualization Reference](#20-visualization-reference)
 21. [Recommendations](#21-recommendations)
 22. [Limitations](#22-limitations)
-23. [Next Steps](#23-next-steps)
 
 ---
 
@@ -1027,10 +1026,3 @@ All 14 figures live in `assets/` and are generated directly by the notebook.
 - **Threshold comparison scope:** the final-model comparison was run fairly between Random Forest and tuned XGBoost only; the SMOTE/ADASYN variants were not also re-optimized at their own thresholds before being ruled out.
 - **Velocity features assume account history is available at inference time**, which the interactive Streamlit demo cannot fully replicate for a single, newly-submitted transaction — it defaults new accounts to zero prior activity.
 - **SHAP plotting quirk:** as noted in Section 17, the feature-importance plot required a fix specific to `RandomForestClassifier`'s multi-class-shaped SHAP output — worth remembering if the final model selection ever flips back to an XGBoost variant, at which point the original (unsliced) code would work as originally written.
-
-## 23. Next Steps
-
-- Recommend periodic retraining and monitoring for concept drift once deployed against real, live transaction data.
-- Extend the Streamlit demo into an internal tool for the fraud-operations team, ideally with a live account-history lookup to properly populate the velocity features.
-- Validate the feature-engineering approach (especially the leakage-safe balance deltas) against a second, independently sourced fraud dataset before treating these exact feature-importance rankings as generalizable.
-- Re-run the threshold-optimization step (Section 16) across *all* nine experiments, not just the top two, for a fully exhaustive final-model comparison.

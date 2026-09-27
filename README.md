@@ -492,6 +492,10 @@ PaySim is synthetic and time-boxed to 30 simulated days; extreme class imbalance
 
 Lopez-Rojas, E., Elmir, A., Axelsson, S. "PaySim: A financial mobile money simulator for fraud detection." *28th European Modeling and Simulation Symposium*, 2016. Available on [Kaggle](https://www.kaggle.com/datasets/ealaxi/paysim1).
 
+## Streamlit Deployment
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://internship-fraud-detection-system.streamlit.app/)
+
 ## Author
 
 **Sudharshan Moodley**
