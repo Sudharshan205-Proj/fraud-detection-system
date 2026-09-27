@@ -1,14 +1,8 @@
 """
-Fraud Detection — Interactive Demo
-Optional deployment piece for the Codec Technologies internship project
-(Part 4.1, Share phase). Loads the artifacts saved at the end of
-Fraud_Detection_System_Final.ipynb and scores a single, user-entered transaction.
+Fraud Detection — Interactive Demo.
 
 Run with:
     streamlit run streamlit_app.py
-
-Requires models/final_model.joblib and models/feature_cols.joblib to
-exist — run the notebook at least once first.
 """
 
 import joblib

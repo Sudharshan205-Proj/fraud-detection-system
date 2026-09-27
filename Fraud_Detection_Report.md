@@ -172,11 +172,11 @@ flowchart TD
     class D1,D2,D3 share
     class E1,E2 act
 
-    style P1 fill:#eef2fa,stroke:#4C72B0,stroke-width:2px
-    style P2 fill:#fceeee,stroke:#C44E52,stroke-width:2px
-    style P3 fill:#f2eef8,stroke:#8172B2,stroke-width:2px
-    style P4 fill:#fbf8ea,stroke:#CCB974,stroke-width:2px
-    style P5 fill:#eaf5f9,stroke:#64B5CD,stroke-width:2px
+    style P1 fill:#eef2fa,stroke:#4C72B0,stroke-width:2px, color:#000000
+    style P2 fill:#fceeee,stroke:#C44E52,stroke-width:2px, color:#000000
+    style P3 fill:#f2eef8,stroke:#8172B2,stroke-width:2px, color:#000000
+    style P4 fill:#fbf8ea,stroke:#CCB974,stroke-width:2px, color:#000000
+    style P5 fill:#eaf5f9,stroke:#64B5CD,stroke-width:2px, color:#000000
 ```
 
 ---
@@ -573,9 +573,9 @@ flowchart TD
     SM --> SM1["Interpolate between a fraud<br/>case and its nearest fraud<br/>neighbors to create new points"]
     AD --> AD1["Like SMOTE, but generates<br/>more synthetic points near<br/>the hardest-to-classify frauds"]
 
-    classDef cw fill:#e3eefc,stroke:#3d6ea8,stroke-width:1.5px
-    classDef sm fill:#fcecdd,stroke:#c47a2f,stroke-width:1.5px
-    classDef ad fill:#f2eefa,stroke:#8172B2,stroke-width:1.5px
+    classDef cw fill:#e3eefc,stroke:#3d6ea8,stroke-width:1.5px, color:#000000
+    classDef sm fill:#fcecdd,stroke:#c47a2f,stroke-width:1.5px, color:#000000
+    classDef ad fill:#f2eefa,stroke:#8172B2,stroke-width:1.5px, color:#000000
     class CW,CW1 cw
     class SM,SM1 sm
     class AD,AD1 ad
@@ -925,7 +925,7 @@ flowchart TD
     N7 --> N8["5️⃣ Share<br/>ROC/PR curves · heatmaps<br/>confusion matrix · SHAP → assets/09–14"]
     N8 --> N9["6️⃣ Act<br/>Final numbers · recommendations · limitations"]
 
-    classDef sec fill:#f5f5f5,stroke:#888,stroke-width:1px,rx:6,ry:6
+    classDef sec fill:#f5f5f5,stroke:#888,stroke-width:1px,rx:6,ry:6, color:#000000
     class N0,N1,N2,N3,N4,N5,N6,N7,N8,N9 sec
 ```
 

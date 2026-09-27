@@ -11,7 +11,6 @@ kaggle.json
 data/
 models/
 paysim1.zip
-*.zip
 
 # --- Jupyter / Python caches ---
 .ipynb_checkpoints/
