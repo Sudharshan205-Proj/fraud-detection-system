@@ -1,9 +1,33 @@
 # --- Virtual environment ---
 .venv/
+venv/
 
 # --- Secrets ---
 .kaggle/
+.env
+.env.*
+.streamlit/secrets.toml
 
 # --- Data ---
 data/
 paysim1.zip
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Editors ---
+.vscode/
+.idea/
+
+# --- Logs ---
+*.log
+
+# --- OS files ---
+.DS_Store
+Thumbs.db

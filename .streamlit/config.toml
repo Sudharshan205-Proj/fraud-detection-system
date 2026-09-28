@@ -7,7 +7,7 @@ primaryColor = "#4F8BF9"
 # Main application background
 backgroundColor = "#0E1117"
 
-# Secondary/card background
+# Secondary background — used for the sidebar and widget backgrounds
 secondaryBackgroundColor = "#161B22"
 
 # Main text
@@ -17,10 +17,10 @@ textColor = "#F0F6FC"
 font = "sans serif"
 
 [server]
-# Required for Streamlit Cloud
+# Run without trying to open a local browser window (Streamlit Cloud runs headless anyway)
 headless = true
 
-# Reduce unnecessary file watching
+# Pick the file watcher automatically (this is Streamlit's default)
 fileWatcherType = "auto"
 
 [browser]
@@ -28,9 +28,9 @@ fileWatcherType = "auto"
 gatherUsageStats = false
 
 [client]
-# Hide the default Streamlit menu
+# Minimal toolbar: shows only the items set via menu_items in st.set_page_config (hidden if none are set)
 toolbarMode = "minimal"
 
 [ui]
-# Hide the deploy button
-hideTopBar = false
+# Hide most of the UI elements at the top of the app (the top bar), not just the Deploy button
+hideTopBar = true

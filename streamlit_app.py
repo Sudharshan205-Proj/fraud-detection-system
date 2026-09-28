@@ -5,22 +5,35 @@ Run with:
     streamlit run streamlit_app.py
 """
 
+import warnings
+
 import joblib
 import pandas as pd
 import streamlit as st
+from sklearn.exceptions import InconsistentVersionWarning
 
 st.set_page_config(page_title="Fraud Detection Demo",
                    page_icon="🔍", layout="centered")
 
 MODEL_PATH = "models/final_model.joblib"
 FEATURE_COLS_PATH = "models/feature_cols.joblib"
+THRESHOLD_PATH = "models/threshold.joblib"
 
 
 @st.cache_resource
 def load_artifacts():
-    model = joblib.load(MODEL_PATH)
-    feature_cols = joblib.load(FEATURE_COLS_PATH)
-    return model, feature_cols
+    # Record (rather than silently swallow) scikit-learn's pickle-version warnings so the
+    # app can tell the user when the model was saved with a different scikit-learn version.
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        model = joblib.load(MODEL_PATH)
+        feature_cols = joblib.load(FEATURE_COLS_PATH)
+        threshold = float(joblib.load(THRESHOLD_PATH))
+    version_warnings = [
+        str(w.message) for w in caught
+        if issubclass(w.category, InconsistentVersionWarning)
+    ]
+    return model, feature_cols, threshold, version_warnings
 
 
 st.title("🔍 Fraud Detection — Live Transaction Scoring")
@@ -30,14 +43,28 @@ st.caption(
 )
 
 try:
-    model, feature_cols = load_artifacts()
+    model, feature_cols, threshold, version_warnings = load_artifacts()
 except FileNotFoundError:
     st.error(
-        "Model artifacts not found. Run `Fraud_Detection_System_Final.ipynb` first — "
-        "it saves `models/final_model.joblib` and `models/feature_cols.joblib` "
-        "after the final-model-selection step."
+        "Model artifacts not found. Run `fraud-detection-system.ipynb` first — "
+        "it saves `models/final_model.joblib`, `models/feature_cols.joblib` and "
+        "`models/threshold.joblib` after the final-model-selection step."
     )
     st.stop()
+except Exception as exc:  # e.g. artifacts pickled with an incompatible library version
+    st.error(
+        "Model artifacts could not be loaded — they were most likely saved with a different "
+        "scikit-learn / XGBoost version than the one installed here. Reinstall the versions in "
+        "`requirements.txt`, or re-run `fraud-detection-system.ipynb` to regenerate the artifacts. "
+        f"({type(exc).__name__}: {exc})"
+    )
+    st.stop()
+
+if version_warnings:
+    st.warning(
+        "The model was saved with a different scikit-learn version than the one running this app; "
+        "predictions may be unreliable. " + version_warnings[0]
+    )
 
 with st.form("transaction_form"):
     col1, col2 = st.columns(2)
@@ -90,17 +117,31 @@ if submitted:
         "orig_cum_amount_so_far": 0.0,
     }
 
-    # Build the row in the exact column order the model was trained on,
-    # filling anything the notebook's feature set has but this form doesn't.
-    input_df = pd.DataFrame([{col: row.get(col, 0) for col in feature_cols}])
+    # Refuse to score if the model expects a feature this form doesn't compute,
+    # instead of silently filling it with 0.
+    missing_features = [col for col in feature_cols if col not in row]
+    if missing_features:
+        st.error(
+            "The model expects features this demo does not compute: "
+            f"{', '.join(missing_features)}. Update `streamlit_app.py` to match the notebook's "
+            "feature engineering."
+        )
+        st.stop()
+
+    # Build the row in the exact column order the model was trained on.
+    input_df = pd.DataFrame([{col: row[col] for col in feature_cols}])
 
     fraud_probability = model.predict_proba(input_df)[0, 1]
 
     st.divider()
     st.metric("Fraud risk score", f"{fraud_probability:.2%}")
     st.progress(min(float(fraud_probability), 1.0))
+    st.caption(
+        f"Flagged as fraud when the score is at or above {threshold:.4f} — the operating "
+        "threshold the notebook selected on the validation set."
+    )
 
-    if fraud_probability >= 0.5:
+    if fraud_probability >= threshold:
         st.error("⚠️ This transaction is flagged as likely fraudulent.")
     else:
         st.success("✅ This transaction looks legitimate.")
