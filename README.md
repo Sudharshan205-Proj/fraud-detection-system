@@ -9,9 +9,9 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.64-FF4B4B?logo=streamlit&logoColor=white)
 ![Status](https://img.shields.io/badge/status-complete-brightgreen)
 
-A fraud-detection pipeline built on [PaySim1](https://www.kaggle.com/datasets/ealaxi/paysim1), a 6.36-million-row synthetic mobile-money dataset. An eight-experiment comparison matrix plus a tuned XGBoost (nine candidates in all) — spanning anomaly detection (models fit on normal transactions only) and supervised classification, with three different imbalance-handling strategies — are compared head-to-head on an untouched test set, and the winner is picked fairly rather than assumed.
+A post-transaction fraud-monitoring pipeline built on [PaySim1](https://www.kaggle.com/datasets/ealaxi/paysim1), a 6.36-million-row synthetic mobile-money dataset. An eight-experiment comparison matrix plus a tuned XGBoost (nine candidates in all) — spanning anomaly detection (models fit on normal transactions only) and supervised classification, with three different imbalance-handling strategies — are compared head-to-head on the validation set before one final model is evaluated on the held-out test set.
 
-**Headline result:** at its validation-chosen operating threshold, the final model (a tuned XGBoost) catches **99.68% of fraud with zero false positives** (F1 = 0.9984, AUC-ROC = 0.9993) on 415,562 held-out test transactions.
+**Headline result:** at its validation-chosen operating threshold, the final model (a tuned XGBoost) catches **99.59% of fraud with zero false positives** (F1 = 0.9980, AUC-ROC = 0.9992) on 415,562 held-out test transactions.
 
 ---
 
@@ -47,15 +47,15 @@ A fraud-detection pipeline built on [PaySim1](https://www.kaggle.com/datasets/ea
 > - Handle class imbalance with techniques like SMOTE
 > - Use performance metrics like F1-score and AUC-ROC
 
-That is the original brief for this internship project. Everything else in this repository — the 8-experiment comparison matrix (plus a tuned XGBoost as a ninth candidate), the leakage-aware feature engineering, the fair threshold-optimized model selection, and the interactive demo — is this brief carried out end-to-end on a real 6.3-million-row dataset, following the same six-phase analysis cycle taught throughout the internship's foundational coursework (see below).
+That is the original brief for this internship project. Everything else in this repository — the 8-experiment comparison matrix (plus a tuned XGBoost as a ninth candidate), post-transaction feature engineering, fair threshold-optimized model selection, and the interactive demo — is this brief carried out end-to-end on a real 6.3-million-row dataset, following the same six-phase analysis cycle taught throughout the internship's foundational coursework (see below).
 
 | Item | Detail |
 |---|---|
-| **Task** | Binary classification — flag fraudulent transactions in near-real time |
+| **Task** | Binary classification — flag likely fraudulent completed transactions for post-transaction monitoring |
 | **Dataset** | PaySim1, 6,362,620 transactions, 8,213 fraud (0.13%) |
 | **Approach** | 8-experiment comparison matrix (anomaly detection + supervised, 3 imbalance strategies) plus a tuned XGBoost (9 candidates), with the final model and its threshold selected on a validation set |
-| **Final model** | XGBoost (tuned, class weighting), threshold 0.9861 |
-| **Result** | F1 = 0.9984 · Precision = 1.0000 · Recall = 0.9968 · AUC-ROC = 0.9993 (test set, at the validation-chosen threshold) |
+| **Final model** | XGBoost (tuned, class weighting), threshold 0.9859 |
+| **Result** | F1 = 0.9980 · Precision = 1.0000 · Recall = 0.9959 · AUC-ROC = 0.9992 (test set, at the validation-chosen threshold) |
 | **Full write-up** | [`Fraud_Detection_Report.md`](./Fraud_Detection_Report.md) |
 
 ---
@@ -69,9 +69,9 @@ This project is the **Week 8 capstone** of an 8-week Data Science internship at 
 | Week | Focus | Ties to This Project |
 |---|---|---|
 | 1 | Introduction to Data Science | Framed the business task and the six-phase analysis cycle used throughout (see below) |
-| 2 | Data Cleaning and Preprocessing | Duplicate/null checks, balance-reconciliation integrity checks, leakage-aware feature engineering |
+| 2 | Data Cleaning and Preprocessing | Duplicate/null checks, balance-reconciliation integrity checks, post-transaction feature engineering |
 | 3 | Exploratory Data Science (EDA) | Class-imbalance, transaction-type, amount, and time-based EDA (Section 4 of the report) |
-| 4 | Advanced Data Science | Velocity features, train/val/test methodology, reproducible environment setup |
+| 4 | Advanced Data Science | Train/val/test methodology and reproducible environment setup |
 | 5 | Machine Learning Basics | Logistic Regression baseline, Isolation Forest, Autoencoder |
 | 6 | Applied Machine Learning | Random Forest & XGBoost experiment matrix, SMOTE/ADASYN, hyperparameter tuning |
 | 7 | Big Data and Cloud Computing | Handling a 6.3M-row / 470+ MB dataset efficiently (dtype optimization, chunked reasoning about scale) |
@@ -84,7 +84,7 @@ This project is the **Week 8 capstone** of an 8-week Data Science internship at 
 | 1 | Foundations: Data, Data, Everywhere | The 6-phase analysis process, analytical thinking, the data ecosystem | Structures the whole project end-to-end |
 | 1 | Ask Questions to Make Data-Driven Decisions | SMART questions, problem framing, “spotting an unusual occurrence” as a problem archetype | Ask phase — business task & success criteria |
 | 2 | Prepare Data for Exploration | The ROCCC data-quality framework, sampling/observer/confirmation bias, data ethics | Dataset ROCCC assessment, synthetic-data caveats |
-| 3 | Process Data from Dirty to Clean | Data integrity, the “dirty data” taxonomy, cleaning workflows | Integrity checks, balance-reconciliation logic, leakage-aware feature engineering |
+| 3 | Process Data from Dirty to Clean | Data integrity, the “dirty data” taxonomy, cleaning workflows | Integrity checks, balance-reconciliation logic, post-transaction feature engineering |
 | 4 | Analyze Data to Answer Questions | Aggregation, GROUP BY-style analysis, pattern-finding, joins | EDA, fraud-by-type breakdowns, the 8-experiment comparison matrix |
 | 5 | Share Data Through the Art of Visualization | Chart selection, dashboarding, storytelling with data | ROC/PR curves, correlation heatmaps, SHAP plot, the Streamlit demo |
 | 6 | Data Analysis with R Programming | Tidyverse/dplyr, ggplot2, R Markdown, reproducibility | Reproducible environment practices (`requirements.txt`, notebook) — implemented in **Python** rather than R |
@@ -132,7 +132,7 @@ flowchart LR
 |---|---|---|
 | **Ask** | Define the fraud-detection business task and SMART success criteria (F1 ≥ 0.80, AUC-ROC ≥ 0.95) | Problem statement (Report) |
 | **Prepare** | Download PaySim1, assess it against the ROCCC criteria, document schema and the TRANSFER/CASH_OUT-only fraud pattern | Dataset overview (Report) |
-| **Process** | Integrity checks, leakage-aware feature engineering, velocity features, train/val/test split before resampling | Modeling-ready feature set (Report) |
+| **Process** | Integrity checks, post-transaction feature engineering, train/val/test split before resampling | Modeling-ready feature set (Report) |
 | **Analyze** | Run the 8-experiment matrix, tune XGBoost, fairly compare finalists at their own optimal thresholds (chosen on the validation set) | Results table + selected model (Report) |
 | **Share** | ROC/PR curves, confusion matrix, correlation heatmaps, SHAP feature importance, optional Streamlit demo | 14 result visualizations (`assets/`) |
 | **Act** | Recommend an operating threshold, document limitations, package as a portfolio-ready GitHub repository | Recommendations & next steps (Report) |
@@ -148,7 +148,7 @@ The project plan lays out a **6-week** timeline (the internship itself runs 8 we
 | Week | Phase(s) | Planned Focus |
 |---|---|---|
 | Week 1 | Ask + Prepare | Problem framing, dataset download/assessment, environment setup, initial EDA |
-| Week 2 | Process | Data cleaning, leakage-aware feature engineering, train/validation/test split |
+| Week 2 | Process | Data cleaning, post-transaction feature engineering, train/validation/test split |
 | Week 3 | Analyze | Baseline model, Isolation Forest & Autoencoder, first round of supervised models with class weighting |
 | Week 4 | Analyze (cont.) | SMOTE/ADASYN experiments, hyperparameter tuning, final model selection |
 | Week 5 | Share | Visualizations, optional Streamlit demo, written report and GitHub packaging |
@@ -175,7 +175,7 @@ flowchart TD
         direction TB
         B1(["Confirm fraud only in<br/>TRANSFER / CASH_OUT"])
         B2(["Engineer error-balance<br/>deltas, ratios & flags"])
-        B3(["Engineer velocity<br/>features"])
+        B3(["Engineer balance-derived<br/>features"])
         B4(["Train / Val / Test split<br/>— before resampling"])
         B1 --> B2 --> B3 --> B4
     end
@@ -235,7 +235,7 @@ flowchart TD
 
 ## Machine Learning Workflow
 
-The modeling pipeline itself — the heart of the Analyze phase — follows a standard, leakage-aware supervised vs. anomaly-detection comparison workflow. Node shapes carry meaning throughout: **cylinders** are data at rest, **diamonds** are decisions/branch points, and the **pill-shaped node** is the final outcome.
+The modeling pipeline itself — the heart of the Analyze phase — follows a standard post-transaction supervised vs. anomaly-detection comparison workflow. Node shapes carry meaning throughout: **cylinders** are data at rest, **diamonds** are decisions/branch points, and the **pill-shaped node** is the final outcome.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis"}, "themeVariables": {"fontSize": "14px"}}}%%
@@ -243,7 +243,7 @@ flowchart TD
     R[("Raw PaySim1 CSV<br/>6,362,620 rows")]
     F1{"Fraud only in<br/>TRANSFER / CASH_OUT?"}
     S["Filter to modeling subset<br/>2,770,409 rows"]
-    FE["Feature engineering<br/>error-balance deltas · ratios · flags · velocity"]
+    FE["Feature engineering<br/>error-balance deltas · ratios · flags"]
     SPLIT[["Train 70% / Val 15% / Test 15%<br/>split BEFORE any resampling"]]
 
     R --> F1
@@ -274,7 +274,7 @@ flowchart TD
     TUNE["RandomizedSearchCV<br/>tuning XGBoost (class-weighted)"]
     V2 --> TUNE
 
-    EVAL{{"Evaluate ALL 9 candidates<br/>on the SAME untouched test set"}}
+    EVAL{{"Evaluate ALL 9 candidates<br/>on the validation set"}}
     U1 --> EVAL
     U2 --> EVAL
     V1 --> EVAL
@@ -283,7 +283,7 @@ flowchart TD
     THRESH{"Threshold-optimize the top 2<br/>candidates (on validation)"}
     FINAL(["🏆 Final Model Selected<br/>XGBoost · tuned"])
     ART[("Persist artifacts<br/>model · scaler · feature_cols · threshold")]
-    DEMO["Streamlit demo<br/>live transaction scoring"]
+    DEMO["Streamlit demo<br/>post-transaction scoring"]
 
     EVAL ==> THRESH ==> FINAL ==> ART ==> DEMO
 
@@ -306,7 +306,7 @@ flowchart TD
 ```
 
 **Key design choices baked into this workflow:**
-- The test set is split off **before** any SMOTE/ADASYN resampling, so it always reflects the real 0.30% fraud rate.
+- All candidates are compared on the validation set; the test set is split off **before** any SMOTE/ADASYN resampling and reserved for the locked final model.
 - Both an anomaly-detection track (Isolation Forest and Autoencoder, fit on normal transactions only, with thresholds set using validation labels) and a supervised classification track are trained, satisfying the project brief's "anomaly detection **or** classification" guideline by doing both and comparing them.
 - The final model is chosen by comparing the top two candidates at **each one's own optimal decision threshold, selected on the validation set** (never the test set), not by assuming the more complex model (XGBoost) automatically wins over the simpler one (Random Forest).
 
@@ -355,7 +355,7 @@ Accuracy was deliberately **not** used to select a model: predicting "not fraud"
 |---|---|---|
 | **Ask** | Problem framing, SMART success criteria | Markdown documentation (no code) |
 | **Prepare** | Dataset download, schema/ROCCC assessment, dataset-overview functions | `pandas`, `numpy`, `kaggle` CLI |
-| **Process** | Integrity checks, leakage-aware feature engineering, velocity features, train/val/test split | `pandas`, `numpy`, `scikit-learn` (`train_test_split`, `StandardScaler`) |
+| **Process** | Integrity checks, post-transaction feature engineering, train/val/test split | `pandas`, `numpy`, `scikit-learn` (`train_test_split`, `StandardScaler`) |
 | **Analyze** | Baseline + tree models, anomaly detection, imbalance handling, hyperparameter tuning | `scikit-learn`, `xgboost`, `imbalanced-learn` (SMOTE/ADASYN), `tensorflow`/`keras` |
 | **Share** | Visualization, explainability, interactive demo | `matplotlib`, `seaborn`, `shap`, `streamlit` |
 | **Act** | Artifact persistence, reporting, packaging | `joblib`, Markdown, Git/GitHub |
@@ -395,8 +395,8 @@ All 14 figures live in [`assets/`](./assets) and are generated directly by the n
 | 07 | `07_amount_vs_balance_scatter.png` | Scatter plot (log-log, sampled) | Amount vs. sender's pre-transaction balance, colored by class |
 | 08 | `08_raw_correlation_heatmap.png` | Heatmap | Linear correlation among raw numeric columns |
 | 09 | `09_autoencoder_training_loss.png` | Line chart | Autoencoder training vs. validation loss curves |
-| 10 | `10_roc_curve_comparison.png` | Multi-series line chart | ROC curves for all 9 experiments |
-| 11 | `11_pr_curve_comparison.png` | Multi-series line chart | Precision-Recall curves for all 9 experiments |
+| 10 | `10_roc_curve_comparison.png` | Multi-series line chart | Validation-set ROC curves for all 9 experiments |
+| 11 | `11_pr_curve_comparison.png` | Multi-series line chart | Validation-set Precision-Recall curves for all 9 experiments |
 | 12 | `12_engineered_correlation_heatmap.png` | Heatmap | Linear correlation among engineered model features |
 | 13 | `13_confusion_matrix_final.png` | Confusion matrix (annotated heatmap) | Final model's predictions vs. actual labels |
 | 14 | `14_shap_summary.png` | SHAP beeswarm plot | Per-feature contribution to individual fraud predictions |
@@ -421,7 +421,7 @@ Fraud-Detection-System/
 ├── models/                        # Saved model artifacts (model, scaler, feature list, operating threshold), generated by the notebook
 ├── README.md                      # You are here
 ├── requirements.txt               # Python dependencies
-└── streamlit_app.py               # Interactive demo — live fraud-risk scoring
+└── streamlit_app.py               # Interactive demo — post-transaction fraud-risk scoring
 ```
 
 ## Setup
@@ -449,7 +449,7 @@ Fraud-Detection-System/
 ## Usage
 
 **Run the full analysis**
-Open `fraud-detection-system.ipynb`, update `DATA_PATH` if your filename differs, and run all cells. This performs EDA, engineers leakage-aware features, runs all 9 experiments (the 8-experiment matrix plus tuned XGBoost), and saves the winning model and its operating threshold to `models/`. Every plot is written to `assets/` automatically as it's generated.
+Open `fraud-detection-system.ipynb`, update `DATA_PATH` if your filename differs, and run all cells. This performs EDA, engineers post-transaction features, compares all 9 experiments on validation data, evaluates the selected final model on the held-out test set, and saves its operating threshold to `models/`. Every plot is written to `assets/` automatically as it's generated.
 
 Prefer not to install Jupyter first? Open the rendered export in `exports/` in any browser to see the fully executed notebook, outputs and all.
 
@@ -458,25 +458,25 @@ Once the notebook has run at least once (so `models/final_model.joblib` exists):
 ```bash
 streamlit run streamlit_app.py
 ```
-Enter a transaction's details to get a live fraud-risk score. Note that the demo defaults an account's transaction history to zero, since a single submitted transaction has no prior activity to look up — see the report's Limitations section.
+Enter a completed transaction's details to get a post-transaction fraud-risk score.
 
 ## Results at a Glance
 
-All rows in this table use each model's **default 0.5 decision threshold** (bold = best F1 at that threshold; ⭐ = the model ultimately selected as final). The final model's threshold-tuned result is reported separately below the table.
+All rows below are validation-set results at each model's **default 0.5 decision threshold** (bold = best F1 at that threshold; ⭐ = the final model). The selected model's threshold-tuned test result is reported separately.
 
 | Experiment (default 0.5 threshold) | Precision | Recall | F1 | AUC-ROC |
 |---|---|---|---|---|
-| Random Forest (class weighting) | 0.998 | 0.997 | **0.9976** | 0.9988 |
-| **XGBoost (tuned)** ⭐ | 0.972 | 0.998 | 0.9848 | 0.9993 |
-| XGBoost (SMOTE) | 0.957 | 0.998 | 0.9769 | 0.9991 |
-| XGBoost (ADASYN) | 0.932 | 0.998 | 0.9635 | 0.9989 |
-| XGBoost (class weighting) | 0.866 | 0.998 | 0.9272 | 0.9987 |
-| Random Forest (SMOTE) | 0.809 | 0.998 | 0.8935 | 0.9986 |
-| Autoencoder (unsupervised) | 0.261 | 0.266 | 0.2633 | 0.9277 |
-| Logistic Regression | 0.059 | 0.930 | 0.1116 | 0.9883 |
-| Isolation Forest (unsupervised) | 0.017 | 0.017 | 0.0168 | 0.8300 |
+| Random Forest (class weighting) | 0.994 | 0.995 | **0.9943** | 0.9976 |
+| **XGBoost (tuned)** ⭐ | 0.978 | 0.995 | 0.9867 | 0.9984 |
+| XGBoost (SMOTE) | 0.951 | 0.995 | 0.9726 | 0.9978 |
+| XGBoost (ADASYN) | 0.933 | 0.995 | 0.9631 | 0.9977 |
+| XGBoost (class weighting) | 0.864 | 0.995 | 0.9249 | 0.9982 |
+| Random Forest (SMOTE) | 0.773 | 0.995 | 0.8701 | 0.9975 |
+| Autoencoder (unsupervised) | 0.336 | 0.336 | 0.3359 | 0.9315 |
+| Logistic Regression | 0.060 | 0.929 | 0.1119 | 0.9860 |
+| Isolation Forest (unsupervised) | 0.031 | 0.032 | 0.0312 | 0.8452 |
 
-The two finalists — Random Forest and tuned XGBoost — were then each given their own optimal decision threshold, **chosen on the validation set** (not the test set). On validation, tuned XGBoost scored F1 = 0.9976 at threshold 0.9861 versus 0.9963 at 0.9533 for Random Forest, so it was selected. Scored once on the test set at that validation-chosen threshold, it reaches F1 = 0.9984 (threshold-tuned, versus 0.9848 at the default 0.5 threshold in the table above), with 1,228 of 1,232 frauds caught and no false positives — see the report for how the final model was picked fairly rather than assumed.
+The two supervised finalists — Random Forest and tuned XGBoost — are each given their own optimal decision threshold, **chosen on the validation set** (not the test set). Tuned XGBoost scored F1 = 0.9976 at threshold 0.9859 versus 0.9963 at 0.9500 for Random Forest, so it was selected. Scored once on the test set at that validation-chosen threshold, it reaches F1 = 0.9980, with 1,227 of 1,232 frauds caught and no false positives.
 
 <p align="center">
   <img src="assets/13_confusion_matrix_final.png" alt="Final confusion matrix" width="420">
@@ -485,8 +485,8 @@ The two finalists — Random Forest and tuned XGBoost — were then each given t
 ## Key Findings
 
 - **Fraud occurs only in TRANSFER and CASH_OUT transactions** — confirmed and asserted in code before any modeling began.
-- **Raw balance columns are unreliable as features.** Merchant destination accounts show zero balances in every row (calculated in the notebook's balance-reconciliation cell), and 65–80% of all rows fail a simple balance-reconciliation check — both replaced with leakage-aware engineered deltas (`errorBalanceOrig`, `errorBalanceDest`).
-- **The best imbalance strategy depended on the model.** Class weighting clearly beat SMOTE for Random Forest (F1 0.9976 vs. 0.8935), but for XGBoost at the default threshold SMOTE (0.9769) and ADASYN (0.9635) beat plain class weighting (0.9272); the tuned, class-weighted XGBoost (0.9848) was the best XGBoost variant. These comparisons were run at the default 0.5 threshold and were not re-optimized per variant.
+- **Raw balance columns are unreliable as features.** Merchant destination accounts show zero balances in every row (calculated in the notebook's balance-reconciliation cell), and 65–80% of all rows fail a simple balance-reconciliation check — both replaced with post-transaction engineered deltas (`errorBalanceOrig`, `errorBalanceDest`).
+- **The best imbalance strategy depended on the model.** Class weighting clearly beat SMOTE for Random Forest (F1 0.9943 vs. 0.8701), but for XGBoost at the default threshold SMOTE (0.9726) and ADASYN (0.9631) beat plain class weighting (0.9249); the tuned, class-weighted XGBoost (0.9867) was the best XGBoost variant. These validation comparisons use the default 0.5 threshold and were not re-optimized per variant.
 - **PaySim's own `isFlaggedFraud` rule catches only 16 of 8,213 frauds** — every trained model here substantially outperforms the naive baseline.
 - **Linear correlation with `isFraud` is weak everywhere** (max ≈ 0.08 for any single raw or engineered feature) — fraud in this dataset is only separable through nonlinear feature interactions, which is why tree-based models dominate the comparison.
 

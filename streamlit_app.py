@@ -36,10 +36,10 @@ def load_artifacts():
     return model, feature_cols, threshold, version_warnings
 
 
-st.title("🔍 Fraud Detection — Live Transaction Scoring")
+st.title("🔍 Fraud Detection — Post-Transaction Scoring")
 st.caption(
-    "Enter a transaction's details below to get a live fraud-risk score from the "
-    "trained model (PaySim1, TRANSFER / CASH_OUT transactions)."
+    "Enter a completed transaction's details below to get a post-transaction fraud-risk "
+    "score from the trained model (PaySim1, TRANSFER / CASH_OUT transactions)."
 )
 
 try:
@@ -91,8 +91,7 @@ with st.form("transaction_form"):
     submitted = st.form_submit_button("Score this transaction")
 
 if submitted:
-    # Re-derive exactly the same engineered features the notebook computes,
-    # from the raw fields a user can plausibly supply for a single transaction.
+    # Re-derive exactly the same post-transaction engineered features the notebook computes.
     error_balance_orig = old_balance_org - amount - new_balance_orig
     error_balance_dest = old_balance_dest + amount - new_balance_dest
     amount_to_oldbalance_ratio = amount / \
@@ -109,12 +108,6 @@ if submitted:
         "dest_balance_was_zero": dest_balance_was_zero,
         "type_CASH_OUT": int(txn_type == "CASH_OUT"),
         "type_TRANSFER": int(txn_type == "TRANSFER"),
-        # Velocity features require the sender's transaction history, which a
-        # single-transaction form can't supply — defaulted to 0 (first-seen
-        # account). Known limitation of this demo vs. a real pipeline, which
-        # would look these up from a live account-activity store.
-        "orig_txn_count_so_far": 0,
-        "orig_cum_amount_so_far": 0.0,
     }
 
     # Refuse to score if the model expects a feature this form doesn't compute,
@@ -151,6 +144,6 @@ if submitted:
 
 st.divider()
 st.caption(
-    "Demo only — trained on synthetic PaySim1 data. Not validated against real "
-    "transaction data. See the notebook's Act section for limitations."
+    "Demo only — post-transaction monitoring trained on synthetic PaySim1 data. "
+    "Not validated against real transaction data. See the notebook's Act section for limitations."
 )

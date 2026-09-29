@@ -42,24 +42,24 @@
 
 This project builds and compares **nine fraud-detection modeling approaches** on PaySim1, a 6.36-million-row synthetic financial transaction dataset, and selects a final model through a **fair, threshold-optimized comparison** rather than by assuming the most complex model wins.
 
-The selected model — **tuned XGBoost (class weighting)** — catches **99.68% of fraud (1,228 of 1,232) with zero false positives** on a held-out test set of 415,562 transactions, exceeding both target success criteria (F1 ≥ 0.80, AUC-ROC ≥ 0.95) by a wide margin.
+The selected model — **tuned XGBoost (class weighting)** — catches **99.59% of fraud (1,227 of 1,232) with zero false positives** on a held-out test set of 415,562 transactions, exceeding both target success criteria (F1 ≥ 0.80, AUC-ROC ≥ 0.95) by a wide margin.
 
 Beyond the headline number, the project is built to be a complete, reproducible, end-to-end system:
 
-- A **leakage-aware feature-engineering pipeline** built around a real data-integrity audit (Section 6).
+- A **post-transaction feature-engineering pipeline** built around a real data-integrity audit (Section 6).
 - A **head-to-head comparison** of anomaly detection (models fit on normal transactions only) and supervised classification, satisfying the brief's "anomaly detection **or** classification" guideline by doing both (Section 11).
 - Three different **class-imbalance strategies** — class weighting, SMOTE, ADASYN — compared empirically rather than chosen by assumption (Section 10).
 - A full **metric suite** (Precision, Recall, F1, AUC-ROC, AUC-PR, confusion matrix) reported for every experiment, with accuracy deliberately excluded as the deciding metric (Section 13).
 - A **SHAP-based explainability layer** so every prediction can be justified to a non-technical stakeholder (Section 17).
-- A working **Streamlit demo** for live, interactive transaction scoring (Section 19).
+- A working **Streamlit demo** for interactive post-transaction scoring (Section 19).
 
 | Quick Facts | |
 |---|---|
 | Raw dataset size | 6,362,620 rows · 11 columns |
 | Modeling subset (TRANSFER/CASH_OUT) | 2,770,409 rows · 0.2965% fraud |
 | Experiments run | 9 (1 baseline + 2 anomaly-detection + 6 supervised/tuned) |
-| Final model | XGBoost (tuned, class weighting), threshold 0.9861 |
-| Final F1 / AUC-ROC | 0.9984 / 0.9993 |
+| Final model | XGBoost (tuned, class weighting), threshold 0.9859 |
+| Final F1 / AUC-ROC | 0.9980 / 0.9992 |
 | Figures generated | 14 (`assets/01`–`14`) |
 
 ---
@@ -70,7 +70,7 @@ Financial fraud costs institutions and their customers directly: every missed fr
 
 | | |
 |--|--|
-| **Business task** | Detect fraudulent transactions in near-real time, providing both a risk score per transaction and an explanation of what drove that score. |
+| **Business task** | Detect likely fraudulent completed transactions for post-transaction monitoring, providing both a risk score and an explanation of what drove it. |
 | **Stakeholder** | A fraud-operations team that needs a ranked risk score per transaction *and* a clear explanation of what drives it. |
 | **Success criteria (SMART)** | Achieve an **F1-score ≥ 0.80** and **AUC-ROC ≥ 0.95** on a held-out test set, for the TRANSFER/CASH_OUT transaction types where fraud in this dataset actually occurs. |
 
@@ -115,9 +115,9 @@ flowchart LR
 |---|---|---|
 | **Ask** | 2 | Problem statement & SMART criteria |
 | **Prepare** | 5 | Dataset overview & ROCCC assessment |
-| **Process** | 6, 8, 9 | Clean, leakage-aware, modeling-ready feature set |
+| **Process** | 6, 8, 9 | Clean, post-transaction, modeling-ready feature set |
 | **Analyze** | 10–16 | 9-experiment matrix + selected final model |
-| **Share** | 7, 17, 19, 20 | 14 visualizations, SHAP plot, live demo |
+| **Share** | 7, 17, 19, 20 | 14 visualizations, SHAP plot, interactive demo |
 | **Act** | 21–22 | Recommendations & limitations |
 
 ### Execution Roadmap
@@ -133,7 +133,7 @@ flowchart TD
 
     subgraph P2["🧹 Process"]
         direction TB
-        B1(["Confirm fraud only in<br/>TRANSFER / CASH_OUT"]) --> B2(["Engineer leakage-aware<br/>features"])
+        B1(["Confirm fraud only in<br/>TRANSFER / CASH_OUT"]) --> B2(["Engineer post-transaction<br/>features"])
         B2 --> B3(["Train / Val / Test split<br/>before resampling"])
     end
 
@@ -193,7 +193,7 @@ flowchart TD
 | **Imbalance handling** | `imbalanced-learn` | SMOTE and ADASYN oversampling |
 | **Deep learning** | `tensorflow` / `keras` | The Autoencoder anomaly detector |
 | **Explainability** | `shap` | Beeswarm feature-importance plot for the final model |
-| **Deployment demo** | `streamlit` | Live, interactive transaction-scoring app |
+| **Deployment demo** | `streamlit` | Interactive post-transaction scoring app |
 | **Data source** | `kaggle` CLI + API token | Programmatic PaySim1 download |
 | **Persistence** | `joblib` | Saving the trained model, scaler, feature list, and decision threshold |
 | **Version control** | Git + GitHub | Source control and portfolio hosting |
@@ -311,7 +311,7 @@ def dataset_overview(data):
         print(f"\nTime span: steps 1–{data['step'].max()} (~{n_days:.1f} simulated days)")
 ```
 
-This one function replaces a dozen ad-hoc `print()` calls with a single, reusable, presentation-ready summary — called once on the raw data and reused later on the filtered modeling subset.
+This one function replaces a dozen ad-hoc `print()` calls with a single, reusable, presentation-ready summary for the raw dataset.
 
 ### 6.2 Duplicate & Null Checks
 
@@ -338,7 +338,7 @@ assert set(fraud_types) <= {"TRANSFER", "CASH_OUT"}, (
 
 ### 6.4 The Balance-Reconciliation Identity Check
 
-A clean transaction log should satisfy `oldbalanceOrg − amount ≈ newbalanceOrig`. Checking this identity is what *discovers* the leakage risk that Section 8's feature engineering then defuses:
+A clean transaction log should satisfy `oldbalanceOrg − amount ≈ newbalanceOrig`. Checking this identity shows why the raw balance columns should not be used directly and motivates the post-transaction derived features in Section 8:
 
 ```python
 df["errorBalanceOrig"] = df["oldbalanceOrg"] - df["amount"] - df["newbalanceOrig"]
@@ -354,7 +354,7 @@ merchant_zero_pct = (
 ).mean() * 100
 ```
 
-Result: **79.81%** of rows fail on the sender side, **65.83%** on the recipient side. This single check is what turns "the raw balance columns look fine" into "the raw balance columns must not be used directly" — a textbook example of why integrity checks come *before* feature engineering, not after.
+Result: **79.81%** of rows fail on the sender side, **65.83%** on the recipient side. This single check is what turns "the raw balance columns look fine" into "the raw balance columns should not be used directly" — a textbook example of why integrity checks come *before* feature engineering, not after.
 
 ### 6.5 Data-Cleaning Summary Table
 
@@ -430,21 +430,19 @@ Linear correlation between any single raw numeric column and `isFraud` tops out 
 
 ## 8. Feature Engineering — the Process Phase
 
-Once the integrity checks in Section 6 exposed the leakage risk in the raw balance columns, the notebook engineers safer, information-preserving replacements.
+Once the integrity checks in Section 6 exposed limitations in the raw balance columns, the notebook engineers post-transaction, information-preserving derived features instead of using those raw balances directly.
 
 ```mermaid
 flowchart LR
-    RAW["Raw balances<br/>oldbalanceOrg · newbalanceOrig<br/>oldbalanceDest · newbalanceDest"] -->|dropped, leakage risk| DROP[🚫]
+    RAW["Raw balances<br/>oldbalanceOrg · newbalanceOrig<br/>oldbalanceDest · newbalanceDest"] -->|dropped as direct inputs| DROP[🚫]
     RAW --> DELTA["errorBalanceOrig<br/>errorBalanceDest"]
     RAW --> RATIO["amount_to_oldbalanceOrg_ratio"]
     RAW --> FLAG["orig_balance_zeroed<br/>dest_balance_was_zero"]
-    HIST["Per-account history<br/>nameOrig + step"] --> VEL["orig_txn_count_so_far<br/>orig_cum_amount_so_far"]
     TYPE["type (categorical)"] --> OHE["type_CASH_OUT<br/>type_TRANSFER"]
 
-    DELTA --> FEATURES(("10 Final<br/>Model Features"))
+    DELTA --> FEATURES(("8 Final<br/>Model Features"))
     RATIO --> FEATURES
     FLAG --> FEATURES
-    VEL --> FEATURES
     OHE --> FEATURES
 
     style FEATURES fill:#8172B2,color:#fff,stroke:#4d4370,stroke-width:2px
@@ -474,22 +472,7 @@ model_df = pd.get_dummies(model_df, columns=["type"], prefix="type", dtype="int8
 
 Note the `.astype(str)` before one-hot encoding: `type` was loaded as a pandas `category` dtype spanning all 5 original transaction types, and encoding it directly would have kept 3 permanently-zero dummy columns (for CASH_IN, DEBIT, PAYMENT) in the filtered subset. Casting to plain `str` first avoids that dead-weight.
 
-### 8.3 Velocity Features
-
-```python
-model_df = model_df.sort_values("step")
-
-model_df["orig_txn_count_so_far"] = model_df.groupby("nameOrig")["nameOrig"].cumcount()
-model_df["orig_cum_amount_so_far"] = (
-    model_df.groupby("nameOrig")["amount"].cumsum() - model_df["amount"]
-)
-```
-
-These capture **behavioral history** — how many transactions this account has made and how much it has moved *before* this transaction — a common fraud signal (sudden activity from a previously quiet account) that no single-transaction snapshot feature can express.
-
-**Caveat:** in practice these features are almost always zero here. On the modeling subset the median and 75th percentile of `orig_txn_count_so_far` are both 0 and its maximum is only 2, because nearly every sending account appears just once. Consistent with that, they rank last in the SHAP plot (Section 17).
-
-### 8.4 Dropping Leakage-Risk Columns
+### 8.3 Dropping Raw Balance Columns and IDs
 
 ```python
 leak_cols = ["oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest"]
@@ -499,11 +482,11 @@ model_df = model_df.drop(columns=leak_cols + id_cols)
 feature_cols = [c for c in model_df.columns if c not in ("isFraud", "isFlaggedFraud", "step")]
 ```
 
-Identifiers are dropped too — they were only ever needed to *compute* the velocity features above, and including raw account IDs as model inputs would be both useless (near-infinite cardinality) and a privacy concern in a non-synthetic setting.
+Identifiers are dropped too: including raw account IDs as model inputs would be both unhelpful (near-infinite cardinality) and a privacy concern in a non-synthetic setting.
 
-**Note on wording:** this pipeline is *leakage-aware*, not leakage-proof — `errorBalanceOrig` and `errorBalanceDest` are still computed from post-transaction balances, so they reduce the leakage risk of the raw balance columns rather than eliminate it.
+**Feature-timing note:** `errorBalanceOrig` and `errorBalanceDest` are computed from post-transaction balances. The model is therefore presented as post-transaction monitoring, not pre-authorization scoring.
 
-### 8.5 Final Feature Set
+### 8.4 Final Feature Set
 
 | # | Feature | Type | Captures |
 |---|---|---|---|
@@ -513,10 +496,8 @@ Identifiers are dropped too — they were only ever needed to *compute* the velo
 | 4 | `amount_to_oldbalanceOrg_ratio` | Numeric | Amount relative to sender's balance |
 | 5 | `orig_balance_zeroed` | Binary flag | Sender's account drained to zero |
 | 6 | `dest_balance_was_zero` | Binary flag | Recipient started at zero balance |
-| 7 | `orig_txn_count_so_far` | Numeric | Sender's transaction count to date |
-| 8 | `orig_cum_amount_so_far` | Numeric | Sender's cumulative amount moved to date |
-| 9 | `type_CASH_OUT` | Binary (one-hot) | Transaction type |
-| 10 | `type_TRANSFER` | Binary (one-hot) | Transaction type |
+| 7 | `type_CASH_OUT` | Binary (one-hot) | Transaction type |
+| 8 | `type_TRANSFER` | Binary (one-hot) | Transaction type |
 
 <p align="center">
   <img src="assets/12_engineered_correlation_heatmap.png" alt="Engineered feature correlation heatmap" width="600">
@@ -560,7 +541,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 |---|---|---|---|---|
 | Train | 1,939,216 | 5,749 | 0.2965% | Model fitting (and the only split ever resampled) |
 | Validation | 415,631 | 1,232 | 0.2964% | Autoencoder threshold selection; final-model threshold and winner selection (Section 16) |
-| Test | 415,562 | 1,232 | 0.2965% | Final, untouched evaluation for every experiment |
+| Test | 415,562 | 1,232 | 0.2965% | Final evaluation for the model locked from validation |
 
 Splitting **before** any SMOTE/ADASYN resampling means the test set always reflects the real-world 0.30% fraud rate — a model that looks perfect against a resampled test set (where fraud might be artificially boosted to 50%) can look completely different against reality. `stratify=y` on both splits ensures the tiny fraud class is proportionally represented in all three sets despite its rarity.
 
@@ -592,9 +573,9 @@ flowchart TD
 
 | Technique | Mechanism | Applied To | Result in This Project |
 |---|---|---|---|
-| **Class weighting** | `class_weight="balanced"` (sklearn) or `scale_pos_weight` (XGBoost) — the loss function penalizes a missed fraud far more than a missed legitimate transaction, with no new rows created | Logistic Regression, Random Forest, XGBoost | **Best for Random Forest** (F1 0.9976 vs. 0.8935 with SMOTE). For XGBoost the untuned class-weighted model scored lowest of the three (F1 0.927), but the *tuned* class-weighted model became the best XGBoost variant (F1 0.985) |
-| **SMOTE** | `imbalanced-learn`'s `SMOTE` interpolates between a real fraud case and its k-nearest fraud neighbors to synthesize new, plausible fraud rows, applied **only to the training fold** | Random Forest, XGBoost | Cut Random Forest's precision sharply (0.809), yet lifted untuned XGBoost above its class-weighted version (F1 0.977 vs. 0.927) |
-| **ADASYN** | A SMOTE variant that adaptively generates more synthetic samples near fraud cases that are harder to classify (closer to the decision boundary) | XGBoost | XGBoost F1 0.964 — between SMOTE and untuned class weighting |
+| **Class weighting** | `class_weight="balanced"` (sklearn) or `scale_pos_weight` (XGBoost) — the loss function penalizes a missed fraud far more than a missed legitimate transaction, with no new rows created | Logistic Regression, Random Forest, XGBoost | **Best for Random Forest** (F1 0.9943 vs. 0.8701 with SMOTE). For XGBoost the untuned class-weighted model scored lowest of the three (F1 0.9249), but the *tuned* class-weighted model became the best XGBoost variant (F1 0.9867) |
+| **SMOTE** | `imbalanced-learn`'s `SMOTE` interpolates between a real fraud case and its k-nearest fraud neighbors to synthesize new, plausible fraud rows, applied **only to the training fold** | Random Forest, XGBoost | Cut Random Forest's precision sharply (0.773), yet lifted untuned XGBoost above its class-weighted version (F1 0.9726 vs. 0.9249) |
+| **ADASYN** | A SMOTE variant that adaptively generates more synthetic samples near fraud cases that are harder to classify (closer to the decision boundary) | XGBoost | XGBoost F1 0.9631 — between SMOTE and untuned class weighting |
 
 ```python
 smote = SMOTE(random_state=RANDOM_STATE)
@@ -669,13 +650,13 @@ Random Forest and XGBoost are each trained **twice** — once with class weighti
 
 ### 11.3 Why Both Tracks, Not Just One
 
-The anomaly-detection track answers "how far can a model get by learning only what *normal* looks like, with **no fraud examples in training**?" — relevant because real fraud labels are often delayed, incomplete, or unavailable at deployment time. The supervised track answers "given that labels **are** available here, how much better can we do?" Running both and comparing (Section 15) turns an assumption ("labels help a lot") into a measured, quantified finding: AUC-ROC 0.83–0.93 for the anomaly-detection models vs. 0.9986–0.9993 for the tree-based supervised ones.
+The anomaly-detection track answers "how far can a model get by learning only what *normal* looks like, with **no fraud examples in training**?" — relevant because real fraud labels are often delayed, incomplete, or unavailable at deployment time. The supervised track answers "given that labels **are** available here, how much better can we do?" Running both and comparing (Section 15) turns an assumption ("labels help a lot") into a measured, quantified finding: validation AUC-ROC 0.8452–0.9315 for the anomaly-detection models vs. 0.9975–0.9984 for the tree-based supervised ones.
 
 ---
 
 ## 12. Hyperparameter Tuning
 
-XGBoost, starting from its class-weighted (`scale_pos_weight`) configuration, is tuned via `RandomizedSearchCV` over a 5-dimensional parameter space, using 3-fold stratified cross-validation scored on F1. Note that XGBoost was *not* the strongest model before tuning: at the default threshold Random Forest (class weighting) had the highest F1 (0.9976), and the best untuned XGBoost variant (SMOTE) reached 0.9769.
+XGBoost, starting from its class-weighted (`scale_pos_weight`) configuration, is tuned via `RandomizedSearchCV` over a 5-dimensional parameter space, using 3-fold stratified cross-validation scored on F1. Note that XGBoost was *not* the strongest model before tuning: at the default validation threshold Random Forest (class weighting) had the highest F1 (0.9943), and the best untuned XGBoost variant (SMOTE) reached 0.9726.
 
 ```python
 param_dist = {
@@ -726,12 +707,16 @@ def evaluate_model(name, y_true, y_pred, y_score=None):
     if y_score is not None:
         metrics["AUC-ROC"] = roc_auc_score(y_true, y_score)
         metrics["AUC-PR"] = average_precision_score(y_true, y_score)
+    else:
+        metrics["AUC-ROC"] = np.nan
+        metrics["AUC-PR"] = np.nan
+
     metrics["Confusion Matrix"] = confusion_matrix(y_true, y_pred).tolist()
     results.append(metrics)
     return metrics
 ```
 
-This one function is called after every single experiment, guaranteeing every model in the comparison table (Section 15) was scored identically, on the identical test set, with no metric selectively omitted.
+This one function is called after every single experiment, guaranteeing every model in the comparison table (Section 15) is scored identically on the validation set, with no metric selectively omitted.
 
 ---
 
@@ -743,7 +728,7 @@ flowchart TD
     R[("Raw PaySim1 CSV<br/>6,362,620 rows")]
     F1{"Fraud only in<br/>TRANSFER / CASH_OUT?"}
     S["Filter to modeling subset<br/>2,770,409 rows"]
-    FE["Feature engineering<br/>error-balance deltas · ratios · flags · velocity"]
+    FE["Feature engineering<br/>error-balance deltas · ratios · flags"]
     SPLIT[["Train 70% / Val 15% / Test 15%<br/>split BEFORE any resampling"]]
 
     R --> F1
@@ -774,7 +759,7 @@ flowchart TD
     TUNE["RandomizedSearchCV<br/>tuning XGBoost (class-weighted)"]
     V2 --> TUNE
 
-    EVAL{{"Evaluate ALL 9 candidates<br/>on the SAME untouched test set"}}
+    EVAL{{"Evaluate ALL 9 candidates<br/>on the validation set"}}
     U1 --> EVAL
     U2 --> EVAL
     V1 --> EVAL
@@ -783,7 +768,7 @@ flowchart TD
     THRESH{"Threshold-optimize the top 2<br/>candidates (on validation)"}
     FINAL(["🏆 Final Model Selected<br/>XGBoost · tuned"])
     ART[("Persist artifacts<br/>model · scaler · feature_cols · threshold")]
-    DEMO["Streamlit demo<br/>live transaction scoring"]
+    DEMO["Streamlit demo<br/>post-transaction scoring"]
 
     EVAL ==> THRESH ==> FINAL ==> ART ==> DEMO
 
@@ -806,7 +791,7 @@ flowchart TD
 ```
 
 **Key design choices baked into this workflow:**
-- The test set is split off **before** any SMOTE/ADASYN resampling, so it always reflects the real 0.2965% fraud rate.
+- All candidates are compared on the validation set. The test set is split off **before** any SMOTE/ADASYN resampling and reserved for the final model locked from validation.
 - Both an anomaly-detection track (fit on normal transactions only, with thresholds set using validation labels) and a supervised classification track are trained, satisfying the brief's "anomaly detection **or** classification" guideline by doing both and comparing them.
 - The final model is chosen by comparing the top two candidates at **each one's own optimal decision threshold, selected on the validation set**, not by assuming the more complex model (XGBoost) automatically wins over the simpler one (Random Forest).
 
@@ -814,26 +799,26 @@ flowchart TD
 
 ## 15. Results — the Full Experiment Matrix
 
-Test set: 415,562 transactions, 1,232 fraud. Every experiment below is evaluated on this identical, untouched set.
+Validation set: 415,631 transactions, 1,232 fraud. Every candidate below is evaluated on this identical validation set; only the model locked from validation is evaluated on the held-out test set.
 
 | Rank | Experiment | Precision | Recall | F1 | AUC-ROC | AUC-PR |
 |---|---|---|---|---|---|---|
-| 1 | Random Forest (class weighting) | 0.998 | 0.997 | **0.9976** | 0.9988 | 0.9976 |
-| 2 | XGBoost (tuned) | 0.972 | 0.998 | 0.9848 | 0.9993 | 0.9984 |
-| 3 | XGBoost (SMOTE) | 0.957 | 0.998 | 0.9769 | 0.9991 | 0.9976 |
-| 4 | XGBoost (ADASYN) | 0.932 | 0.998 | 0.9635 | 0.9989 | 0.9976 |
-| 5 | XGBoost (class weighting) | 0.866 | 0.998 | 0.9272 | 0.9987 | 0.9979 |
-| 6 | Random Forest (SMOTE) | 0.809 | 0.998 | 0.8935 | 0.9986 | 0.9937 |
-| 7 | Autoencoder (unsupervised) | 0.261 | 0.266 | 0.2633 | 0.9277 | 0.1825 |
-| 8 | Logistic Regression | 0.059 | 0.930 | 0.1116 | 0.9883 | 0.6515 |
-| 9 | Isolation Forest (unsupervised) | 0.017 | 0.017 | 0.0168 | 0.8300 | 0.0198 |
+| 1 | Random Forest (class weighting) | 0.994 | 0.995 | **0.9943** | 0.9976 | 0.9935 |
+| 2 | XGBoost (tuned) | 0.978 | 0.995 | 0.9867 | 0.9984 | 0.9962 |
+| 3 | XGBoost (SMOTE) | 0.951 | 0.995 | 0.9726 | 0.9978 | 0.9952 |
+| 4 | XGBoost (ADASYN) | 0.933 | 0.995 | 0.9631 | 0.9977 | 0.9952 |
+| 5 | XGBoost (class weighting) | 0.864 | 0.995 | 0.9249 | 0.9982 | 0.9955 |
+| 6 | Random Forest (SMOTE) | 0.773 | 0.995 | 0.8701 | 0.9975 | 0.9885 |
+| 7 | Autoencoder (unsupervised) | 0.336 | 0.336 | 0.3359 | 0.9315 | 0.2993 |
+| 8 | Logistic Regression | 0.060 | 0.929 | 0.1119 | 0.9860 | 0.6272 |
+| 9 | Isolation Forest (unsupervised) | 0.031 | 0.032 | 0.0312 | 0.8452 | 0.0276 |
 
 <p align="center">
   <img src="assets/10_roc_curve_comparison.png" alt="ROC curve comparison" width="500">
   <img src="assets/11_pr_curve_comparison.png" alt="Precision-recall curve comparison" width="500">
 </p>
 
-The tree-based supervised models (Random Forest, XGBoost) dominate across the board. The anomaly-detection track lags well behind — expected, since fraud labels were actually available and used by the supervised models, and Section 7.5 already showed fraud isn't linearly or trivially separable, which also limits how well anomaly scoring can do without a trained fraud classifier.
+The tree-based supervised models (Random Forest, XGBoost) dominate across the board. The anomaly-detection track lags well behind — expected, since fraud labels were available to the supervised models, while anomaly models learn only the normal-transaction pattern.
 
 <p align="center">
   <img src="assets/09_autoencoder_training_loss.png" alt="Autoencoder training loss" width="450">
@@ -854,7 +839,7 @@ The tree-based supervised models (Random Forest, XGBoost) dominate across the bo
 
 ## 16. Final Model Selection
 
-Raw-F1 rankings above use each model's default **0.5** decision boundary, which isn't necessarily each model's *best* boundary. Rather than crown Random Forest the winner on that technicality, the two strongest candidates were compared at **each model's own optimal threshold** — found on the **validation set**, so the test set is never used to pick a threshold or a winner. The chosen model and threshold are then scored on the untouched test set exactly once:
+Candidate rankings use each model's default **0.5** decision boundary, which is not necessarily each model's *best* boundary. The strongest candidates are compared at their own optimal thresholds on the **validation set**, so the test set is never used to pick a threshold or a winner. The chosen model and threshold are then evaluated on the test set:
 
 ```python
 def optimal_threshold_f1(y_true, y_score):
@@ -873,29 +858,30 @@ thr_xgb, prec_xgb, rec_xgb, f1_xgb = optimal_threshold_f1(y_val, y_score_tuned_v
 
 if f1_rf >= f1_xgb:   # tie-break: Random Forest wins an exact validation-F1 tie
     final_model, final_model_name = rf_cw, "Random Forest (class weighting)"
-    final_score, final_threshold = y_score_rf_cw, thr_rf
+    final_threshold = thr_rf
 else:
     final_model, final_model_name = best_model, "XGBoost (tuned)"
-    final_score, final_threshold = y_score_tuned, thr_xgb
+    final_threshold = thr_xgb
 
-# The test set is used once, at the validation-chosen threshold
+# The test set is evaluated once after the model and threshold are locked.
+final_score = final_model.predict_proba(X_test)[:, 1]
 y_pred_final = (final_score >= final_threshold).astype(int)
 ```
 
 | Model | Optimal threshold (validation) | Precision (val.) | Recall (val.) | F1 (val.) |
 |---|---|---|---|---|
-| Random Forest (class weighting) | 0.9533 | 0.9976 | 0.9951 | 0.9963 |
-| XGBoost (tuned) | 0.9861 | 1.0000 | 0.9951 | **0.9976** |
+| Random Forest (class weighting) | 0.9500 | 0.9976 | 0.9951 | 0.9963 |
+| XGBoost (tuned) | 0.9859 | 1.0000 | 0.9951 | **0.9976** |
 
-**XGBoost (tuned)** had the higher validation F1 and was selected as the final model. Scored once on the untouched test set at its validation-chosen threshold of 0.9861:
+**XGBoost (tuned)** had the higher validation F1 and was selected as the final model. Evaluated once on the held-out test set at its validation-chosen threshold of 0.9859:
 
 | Precision | Recall | F1 | AUC-ROC | AUC-PR | Confusion matrix (TN / FP / FN / TP) |
 |---|---|---|---|---|---|
-| 1.0000 | 0.9968 | **0.9984** | 0.9993 | 0.9984 | 414,330 / 0 / 4 / 1,228 |
+| 1.0000 | 0.9959 | **0.9980** | 0.9992 | 0.9984 | 414,330 / 0 / 5 / 1,227 |
 
-Both success criteria set in Section 2 were exceeded by a wide margin (F1 0.9984 ≥ 0.80 target; AUC-ROC 0.9993 ≥ 0.95 target). The validation margin between the two finalists is narrow (identical recall; precision 0.9976 vs. 1.0000), so they should be regarded as near-equals rather than a decisive win.
+Both success criteria set in Section 2 were exceeded by a wide margin (F1 0.9980 ≥ 0.80 target; AUC-ROC 0.9992 ≥ 0.95 target). The validation margin between the two finalists is narrow (identical recall; precision 0.9976 vs. 1.0000), so they should be regarded as near-equals rather than a decisive win.
 
-**Tie-break policy.** The notebook prefers Random Forest only on an exact validation-F1 tie (`f1_rf >= f1_xgb`) — the simpler model, with no hyperparameter search to maintain. No tie occurred, so this rule was not exercised. The original project plan named AUC-ROC and then AUC-PR and the confusion matrix as tie-breakers; those would also favor tuned XGBoost (AUC-ROC 0.9993 vs. 0.9988; AUC-PR 0.9984 vs. 0.9976), so the two policies agree on the outcome.
+**Tie-break policy.** The notebook prefers Random Forest only on an exact validation-F1 tie (`f1_rf >= f1_xgb`) — the simpler model, with no hyperparameter search to maintain. No tie occurred, so this rule was not exercised. The original project plan named AUC-ROC and then AUC-PR and the confusion matrix as tie-breakers; those would also favor tuned XGBoost (AUC-ROC 0.9984 vs. 0.9976; AUC-PR 0.9962 vs. 0.9935), so the two policies agree on the outcome.
 
 <p align="center">
   <img src="assets/13_confusion_matrix_final.png" alt="Final confusion matrix" width="420">
@@ -930,7 +916,7 @@ shap_values = explainer.shap_values(X_test_sample)
   <img src="assets/14_shap_summary.png" alt="SHAP feature importance" width="600">
 </p>
 
-In the SHAP summary for the final model (tuned XGBoost), `errorBalanceOrig` is the strongest driver, followed by `amount_to_oldbalanceOrg_ratio`, `orig_balance_zeroed`, `dest_balance_was_zero` and `errorBalanceDest`; the raw `amount` ranks only sixth, ahead of the two transaction-type flags. The two account-velocity features (`orig_cum_amount_so_far`, `orig_txn_count_so_far`) rank last with near-zero impact, consistent with their being almost always zero in this dataset (Section 8.3). The top five drivers are all engineered features, which supports the point that the feature-engineering effort in Section 8, not just model choice, was central to the result.
+In the recorded SHAP summary for the final model (tuned XGBoost), `errorBalanceOrig` is the strongest driver, followed by `amount_to_oldbalanceOrg_ratio`, `orig_balance_zeroed`, `dest_balance_was_zero` and `errorBalanceDest`; the raw `amount` ranks only sixth, ahead of the two transaction-type flags. The final rerun will regenerate this ranking for the revised eight-feature model.
 
 > **Note on the SHAP cell:** for `RandomForestClassifier`, `TreeExplainer.shap_values()` returns a **3-dimensional array** (samples × features × classes), and passing that directly into `shap.summary_plot()` makes SHAP misinterpret it as interaction values, producing a near-empty 2-feature grid instead of the full-feature beeswarm. XGBoost returns a plain 2D array, so the final tuned XGBoost model does not trigger this. The notebook still slices out the fraud-class values before plotting, so the same cell works if a Random Forest is selected (as it was in an earlier run of this project).
 
@@ -946,7 +932,7 @@ flowchart TD
     N1 --> N2["2️⃣ Prepare<br/>Load CSV · dataset_overview()<br/>numeric_summary() · categorical_summary()"]
     N2 --> N3["Integrity checks<br/>fraud_rate_by_type() · balance reconciliation"]
     N3 --> N4["📊 EDA<br/>8 plotting functions → assets/01–08"]
-    N4 --> N5["3️⃣ Process<br/>Filter subset · feature engineering<br/>velocity features · drop leak columns"]
+    N4 --> N5["3️⃣ Process<br/>Filter subset · feature engineering<br/>drop raw-balance columns and IDs"]
     N5 --> N6["Train/Val/Test split<br/>+ StandardScaler"]
     N6 --> N7["4️⃣ Analyze<br/>evaluate_model() · optimal_threshold_f1()<br/>9 experiments · tuning · final selection"]
     N7 --> N8["5️⃣ Share<br/>ROC/PR curves · heatmaps<br/>confusion matrix · SHAP → assets/09–14"]
@@ -961,7 +947,7 @@ flowchart TD
 | Title & Ask | 0–2 | Imports, `RANDOM_STATE`, plotting defaults |
 | Prepare | 3–16 | `dataset_overview()`, `numeric_summary()`, `categorical_summary()`, `fraud_rate_by_type()`, reconciliation deltas |
 | EDA | 17–32 | `plot_class_imbalance()`, `plot_type_breakdown()`, `plot_amount_histogram()`, `plot_amount_boxplot()`, `plot_fraud_over_time()`, `plot_balance_zeroing_pattern()`, `plot_amount_vs_balance_scatter()`, `plot_raw_correlation_heatmap()` |
-| Process | 33–43 | Feature engineering, velocity features, column drops, `train_test_split`, `StandardScaler` |
+| Process | 33–43 | Feature engineering, column drops, `train_test_split`, `StandardScaler` |
 | Analyze | 44–69 | `evaluate_model()`, `optimal_threshold_f1()`, all 9 experiments, `RandomizedSearchCV`, final-model selection, `joblib.dump()` |
 | Share | 70–76 | ROC/PR overlay plots, engineered correlation heatmap, confusion matrix, `shap.TreeExplainer` |
 | Act | 77–80 | Final metrics printout, recommendations, limitations |
@@ -972,7 +958,7 @@ Every one of the 14 plotting cells writes its figure straight to `assets/` (via 
 
 ## 19. Interactive Demo — the Streamlit App
 
-`streamlit_app.py` is the project's optional deployment piece: a single-page app that loads the persisted model artifacts and scores a manually entered transaction live.
+`streamlit_app.py` is the project's optional deployment piece: a single-page app that loads the persisted model artifacts and scores a manually entered completed transaction for post-transaction monitoring.
 
 ```mermaid
 flowchart LR
@@ -999,8 +985,6 @@ row = {
     "dest_balance_was_zero": int(old_balance_dest == 0),
     "type_CASH_OUT": int(txn_type == "CASH_OUT"),
     "type_TRANSFER": int(txn_type == "TRANSFER"),
-    "orig_txn_count_so_far": 0,      # no history available for a single manual entry
-    "orig_cum_amount_so_far": 0.0,
 }
 missing_features = [col for col in feature_cols if col not in row]   # stop with an error if any
 input_df = pd.DataFrame([{col: row[col] for col in feature_cols}])   # expected feature is missing
@@ -1011,8 +995,7 @@ is_flagged = fraud_probability >= threshold   # threshold loaded from models/thr
 Three implementation details worth calling out:
 
 1. **Feature re-derivation, not re-use.** The app can't import the notebook's feature-engineering code directly, so it re-implements the exact same formulas by hand from the six raw fields a user can plausibly supply — a deliberate duplication that keeps the demo self-contained, at the cost of needing to keep both copies in sync if the notebook's feature logic ever changes.
-2. **Velocity features default to zero.** `orig_txn_count_so_far` and `orig_cum_amount_so_far` require an account's prior transaction history, which a single manually entered transaction has no way to supply — a known, documented limitation (Section 22) rather than a silent gap.
-3. **Same operating threshold as the notebook.** The app flags a transaction when its score reaches the threshold the notebook selected on the validation set (saved to `models/threshold.joblib`), not a hard-coded 0.5.
+2. **Same operating threshold as the notebook.** The app flags a transaction when its score reaches the threshold the notebook selected on the validation set (saved to `models/threshold.joblib`), not a hard-coded 0.5.
 
 `@st.cache_resource` ensures the model, feature list, and decision threshold are loaded from disk once per session rather than on every form submission. (The scaler is saved by the notebook but not loaded by the app: only Logistic Regression and the Autoencoder use scaled inputs, and the final model is tree-based.) The load is wrapped in error handling, so a missing artifact — or one saved with an incompatible library version — gives a clear, actionable message (pointing back at the notebook or `requirements.txt`) instead of a stack trace, and the app refuses to score if the model expects a feature the form does not compute.
 
@@ -1033,8 +1016,8 @@ All 14 figures live in `assets/` and are generated directly by the notebook.
 | 07 | `07_amount_vs_balance_scatter.png` | Scatter plot (log-log, sampled) | Amount vs. sender's pre-transaction balance, colored by class |
 | 08 | `08_raw_correlation_heatmap.png` | Heatmap | Linear correlation among raw numeric columns |
 | 09 | `09_autoencoder_training_loss.png` | Line chart | Autoencoder training vs. validation loss curves |
-| 10 | `10_roc_curve_comparison.png` | Multi-series line chart | ROC curves for all 9 experiments |
-| 11 | `11_pr_curve_comparison.png` | Multi-series line chart | Precision-Recall curves for all 9 experiments |
+| 10 | `10_roc_curve_comparison.png` | Multi-series line chart | Validation-set ROC curves for all 9 experiments |
+| 11 | `11_pr_curve_comparison.png` | Multi-series line chart | Validation-set Precision-Recall curves for all 9 experiments |
 | 12 | `12_engineered_correlation_heatmap.png` | Heatmap | Linear correlation among engineered model features |
 | 13 | `13_confusion_matrix_final.png` | Confusion matrix (annotated heatmap) | Final model's predictions vs. actual labels |
 | 14 | `14_shap_summary.png` | SHAP beeswarm plot | Per-feature contribution to individual fraud predictions |
@@ -1045,7 +1028,7 @@ All 14 figures live in `assets/` and are generated directly by the notebook.
 
 ## 21. Recommendations
 
-- Deploy the final tuned XGBoost model at (or near) its validation-chosen threshold of **0.9861**, and let the fraud-operations team tune it further based on their actual tolerance for false positives vs. false negatives.
+- Deploy the final tuned XGBoost model at (or near) its validation-chosen threshold of **0.9859**, and let the fraud-operations team tune it further based on their actual tolerance for false positives vs. false negatives.
 - Surface SHAP feature importances alongside each flagged transaction so analysts can see *why* it was flagged, not only that it was.
 - Retire PaySim's native `isFlaggedFraud` rule — it caught only 16 of 8,213 frauds dataset-wide, dramatically underperforming every trained model in this comparison.
 - Treat the imbalance strategy as a per-model choice and test it: class weighting was clearly best for Random Forest here, while SMOTE and ADASYN beat untuned class weighting for XGBoost at the default threshold.
@@ -1055,7 +1038,7 @@ All 14 figures live in `assets/` and are generated directly by the notebook.
 
 - **Synthetic data:** PaySim is a synthetic simulation of one month of activity. Patterns learned here may not fully transfer to real transaction data without validation against a real (or real-world-like) dataset.
 - **Extreme class imbalance** (0.2965% fraud within the modeled subset) means small changes in threshold or sampling ratio can swing precision/recall substantially; results here were validated only on a single untouched, non-resampled test split.
-- **Anomaly-detection track limitations:** Isolation Forest and the Autoencoder's anomaly thresholds were tuned using labels available in this dataset during validation — a simplification versus a true unlabeled production deployment, where threshold selection would need a different strategy (e.g., a fixed contamination budget or analyst feedback loop). Their weaker performance here (AUC-ROC 0.83 and 0.93 vs. 0.9986–0.9993 for the tree models) reflects that fraud in this dataset is well-separated by labeled features, not a general verdict on unsupervised or semi-supervised methods.
+- **Anomaly-detection track limitations:** Isolation Forest and the Autoencoder's anomaly thresholds were tuned using labels available in this dataset during validation — a simplification versus a true unlabeled production deployment, where threshold selection would need a different strategy (e.g., a fixed contamination budget or analyst feedback loop). Their weaker performance here (validation AUC-ROC 0.85 and 0.93 vs. 0.9975–0.9984 for the tree models) reflects that fraud in this dataset is well-separated by labeled features, not a general verdict on unsupervised or semi-supervised methods.
 - **Threshold comparison scope:** the final-model comparison was run fairly between Random Forest and tuned XGBoost only; the SMOTE/ADASYN variants were not also re-optimized at their own thresholds before being ruled out.
-- **Velocity features assume account history is available at inference time**, which the interactive Streamlit demo cannot fully replicate for a single, newly-submitted transaction — it defaults new accounts to zero prior activity.
+- **Post-transaction features:** the balance-derived inputs are available only after a transaction completes, so this is a monitoring demonstration rather than a pre-authorization fraud block.
 - **Random, not temporal, split:** the train/validation/test split is a stratified random split rather than a time-ordered one, so the reported scores do not measure how the model would perform on future transactions after training on past ones.
